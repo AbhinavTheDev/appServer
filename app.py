@@ -1,4 +1,3 @@
-# backend/app.py
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -6,8 +5,17 @@ from model.chatbot import WasteManagementChatbot
 from model.classify import WasteImageClassifier
 
 app = Flask(__name__)
-# Allow cross-origin requests from any origin
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Restrict CORS to specific origins in production
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            # "http://localhost:5173",  # Development
+            "https://regenearth.vercel.app"  # Production
+        ],
+        "methods": ["GET", "POST"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Initialize models
 waste_chatbot = WasteManagementChatbot()
@@ -49,14 +57,9 @@ def classify_waste_image():
         # Get image classification
         classification_result = waste_classifier.predict_waste_type(file)
         
-        # Get detailed advice for the predicted waste type
-        waste_type = classification_result["predicted_class"]
-        advice = waste_chatbot.generate_waste_advice(waste_type)
-        
         # Combine the results
         result = {
-            "classification": classification_result,
-            "advice": advice
+            "classification": classification_result
         }
         
         return jsonify(result)
